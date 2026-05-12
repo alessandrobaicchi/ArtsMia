@@ -29,11 +29,12 @@ class View(ft.UserControl):
                                                      bgcolor="orange",
                                                      color="white",
                                                      width=200)
-        self._txtIdOggetto = ft.TextField(label="Id Oggetto", color="orange", border_color="orange")
+        self._txtIdOggetto = ft.TextField(label="Id Oggetto", color="orange", border_color="orange", disabled=True)
         self._btnCompConnessa = ft.ElevatedButton(text="Cerca Connessa", on_click=self._controller.handleCompConnessa,
                                                   bgcolor="orange",
                                                   color="white",
-                                                  width=200)
+                                                  width=200,
+                                                  disabled=True)
 
         self._page.controls.append(ft.Row([self._btnAnalizzaOggetti, self._txtIdOggetto, self._btnCompConnessa],
                                           alignment=ft.MainAxisAlignment.CENTER))
