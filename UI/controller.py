@@ -26,5 +26,40 @@ class Controller:
 
 
     def handleCompConnessa(self,e):
-        pass
+        # Recupero l'input dell'utente
+        txtIdOggetto = self._view._txtIdOggetto.value
+
+        # Verifico che l'utente non lasci il campo vuoto
+        if txtIdOggetto == "":
+            self._view.txt_result.controls.clear()
+            self._view.txt_result.controls.append(ft.Text(f"Attenzione, inserire un valore nel campo id",
+                                                          color="red"))
+            self._view.update_page()
+            return
+
+        # Verifico che l'utente inserisca un numero
+        try:
+            idOggetto = int(txtIdOggetto)
+        except ValueError:
+            self._view.txt_result.controls.clear()
+            self._view.txt_result.controls.append(ft.Text(f"Attenzione, inserire un valore numerico nel campo id",
+                                                          color="red"))
+            self._view.update_page()
+            return
+
+        # Verifico che il valore inserito dall'utente sia un nodo del grafo
+        if not self._model.hasNode(idOggetto):
+            self._view.txt_result.controls.clear()
+            self._view.txt_result.controls.append(ft.Text(f"Attenzione, l'id inserito non è presente nel grafo",
+                                                          color="orange"))
+            self._view.update_page()
+            return
+
+        # Se passo tutti i controlli stampo la componente connessa
+        sizeCompConn = self._model.getInfoCompConnessa(idOggetto)
+        self._view.txt_result.controls.clear()
+        self._view.txt_result.controls.append(
+            ft.Text(f"La componente connessa contentente l'oggetto con id {idOggetto} è composta di {sizeCompConn} nodi",
+                    color="green"))
+        self._view.update_page()
 
