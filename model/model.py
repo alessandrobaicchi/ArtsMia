@@ -1,3 +1,5 @@
+import copy
+
 import networkx as nx
 
 from database.DAO import DAO
@@ -13,6 +15,80 @@ class Model:
         # l'oggetto di tipo artObject corrispondente.
         for n in self._nodes:
             self._idMapAO[n.object_id] = n
+
+        # Qui preparo ciò che mi serve per la RICORSIONE
+        self._optPath = []
+        # Questa lista alla fine della ricorsione conterrà la sequenza di nodi ottima.
+        self._optCost = 0
+        # E' il valore che sto ottimizzando. In questo caso sto massimizzando la somma dei paesi degli archi,
+        # quindi questo valore lo inizializzmo a 0.
+
+
+    # ========================================== RICORSIONE ===================================================
+    # Questo metodo gestirà la ricorsione. Come parametri prende il punto di partenza (source) e la lunghezza (lun).
+    # Poi chiama un metodo ricorsivo che proverà ad aggiungere nodi su nodi finché non arriva alla lunghezza lun.
+    def getOptPath(self, source, lun):
+        parziale = [source]
+        # La soluzione parziale deve contenere source, quindi lo metto già dentro.
+
+        # L'algoritmo deve ciclare fra tutti i nodi della componente connessa.
+        # Provo ad aggiungerne uno alla volta con il meccanismo della backtracking.
+        # Quindi aggiungo un nodo, vado avanti, quando torno indietro lo tolgo e provo ad aggiungerne un altro.
+        # Ovviamente dovendo seguire gli archi non ha senso ciclare su tutti i nodi della componente connessa,
+        # basta ciclare sui nodi dei vicini. In realtà, ciclo sui vicini dell'ultimo nodo inserito, che in questa fase
+        # è source.
+        for n in self._graph.neighbors(source):
+            if n.classification == parziale[-1].classification:
+                # Posso aggiungere questi nodi vicini?
+                # Se la classification del nodo che sto cercando di aggiungere è la stessa
+                # dell'ultimo nodo aggiunto [parziale - 1], allora i due nodi hanno la stessa classification
+                # e posso aggiungere il nodo.
+                parziale.append(n)
+                # Ora chiamo il metodo ricorsivo
+                self._ricorsione(parziale, lun)
+                parziale.pop()  # Backtracking
+        return self._optPath, self._optCost
+
+    def _ricorsione(self, parziale, lun):
+        # Condizione di terminazione
+        if len(parziale) == lun:
+            # Se parziale è lunga esattamente lun verifico che questo parziale sia meglio del best
+            # (condizione di ottimalità), ed esco in ogni caso (perché non ha senso continuare ad
+            # aggiungere nodi, perché tutte le soluzioni che posso ottenere aggiungendo altri nodi non sono valide
+            # perché sono più lunghe di lun).
+
+            if self._costoPath(parziale) > self._optCost:
+                self._optCost = self._costoPath(parziale)
+                self._optPath = copy.deepcopy(parziale)
+                # copy.deepcopy() crea una copia dell'oggetto che gli sto passando, quindi crea una copia di parziale.
+                # Siccome parziale contiene degli oggetti devo fare una COPIA PROFONDA della lista parziale,
+                # cioè creare delle nuove istanze di quegli oggetti e copiarceli.
+            return
+
+        # Se arrivo qui posso ancora aggiungere nodi
+        for n in self._graph.neighbors(parziale[-1]):
+            if parziale[-1].classification == n.classification:
+                parziale.append(n)
+                # Ora chiamo il metodo ricorsivo
+                self._ricorsione(parziale, lun)
+                parziale.pop()  # Backtracking
+
+
+    # Il metodo _costoPath() ha come parametro path, cioè una successione di nodi.
+    # Tale metodo deve calcolare la somma dei pesi. Cicla su tutti gli archi e va a sommare i valori del peso.
+    def _costoPath(self, path):
+        costo = 0
+        for i in range(0, len(path)-1):
+            costo += self._graph[path[i]][path[i+1]]['weight']
+            # Incremento questo costo con il peso dell'arco:
+            # nodo di partenza, nodo di arrivo, parametro peso ("weight").
+            #
+            # NOTA. "weight" è un nome che dò io quando creo gli archi.
+            # Posso dare il nome che voglio, "weight" è il nome convenzionale.
+        return costo
+        # Quindi il costo di questo cammino sarà la somma dei costi degli archi.
+
+    # =========================================================================================================
 
     # ====================================== COMPONENTI CONNESSE ==============================================
 
@@ -132,12 +208,17 @@ class Model:
 
 
 
-    # Questo metodo lo uso per controllare se ha senso cercare una componente connessa che
+    # Il metodo hasNode() lo uso per controllare se ha senso cercare una componente connessa che
     # contiene l'id_oggetto passatogli.
     def hasNode(self, id_oggetto):
         return id_oggetto in self._idMapAO
         # La return è True se id_oggetto è contenuto nell'idMapAO e quindi è contenuto anche nel grafo.
         # La return è False altrimenti.
+
+
+    # Il metodo getNodeFromId() recupera il nodo a partire dall'ID
+    def getNodeFromId(self, id_oggetto):
+        return self._idMapAO[id_oggetto]
 
 
     def buildGraph(self):
