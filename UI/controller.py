@@ -107,7 +107,9 @@ class Controller:
             self._view.update_page()
             return
 
-        # La variabile lun è una stringa, devo convertirla in un intero.
+        # La variabile lun è una stringa, devo convertirla in un intero. Questo perché Flet
+        # restituisce sempre stringhe per i valori dei widget.
+        # Dunque, dato che self._model.getOptPath() si aspetta un intero, faccio io la conversione.
         lunInt = int(lun)
 
         # Ora chiamo il metodo ricorsivo.
